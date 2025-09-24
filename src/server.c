@@ -52,6 +52,83 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 {
     const int max_response_size = 262144;
     char response[max_response_size];
+    //init response length
+    size_t response_length = 0;
+    //todo:
+    // - Need to find a way to build the string responses
+    // - Take each part and put into response
+    
+
+    //BUILD HEADER
+
+    //find size of header
+    int header_size = sizeof(header);
+
+    //place header into response
+    for (int i = 0; i < header_size; i++) {
+        response[i] = header[i];
+    }
+    response[header_size] = '\n'; //newline
+    
+    //BUILD DATE
+
+    char date_preamble[7] = "Date: ";
+
+
+    //current idea on building time for HTTP response. Need to find a better way of adding timezone to output.
+    // time_t currentTime;
+    // time(&currentTime); // Get the current time
+
+    // // //get timezone
+    // time_t t = time(NULL);
+    // struct tm lt = {0};
+    // localtime_r(&t, &lt);
+    
+    // buffer[]
+    // lt.__tm_zone
+
+
+    // printf("Current time: %s", ctime(&currentTime));
+    // return 0;
+
+
+    // build Connection
+
+    //build Content-Length
+
+    //build content type
+
+    //newline
+
+    //body
+
+
+    snprintf(response, max_response_size, header);
+    /*
+    {header}\n
+    Date: {get_date}\n
+    Connection: {connection (close)}\n
+    Content-Length: {content_length}\n
+    Content-Type: {content_type}\n
+    \n
+    {body}
+    
+    */
+
+
+    /*
+    Example output:
+
+    HTTP/1.1 200 OK
+    Date: Wed Dec 20 13:05:11 PST 2017
+    Connection: close
+    Content-Length: 41749
+    Content-Type: text/html
+
+    <!DOCTYPE html><html><head><title>Lambda School ...
+    
+    
+    */
 
     // Build HTTP response and store it in response
 
@@ -181,6 +258,7 @@ int main(void)
     struct cache *cache = cache_create(10, 0);
 
     // Get a listening socket
+    //port 3490
     int listenfd = get_listener_socket(PORT);
 
     if (listenfd < 0) {
