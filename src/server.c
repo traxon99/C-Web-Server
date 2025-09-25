@@ -57,14 +57,30 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     //todo:
     // - Need to find a way to build the string responses
     // - Take each part and put into response
-    
+
 
     //BUILD HEADER
 
-    //find size of header
-    int header_size = sizeof(header);
+    //first check if contents can fit into response.
+    valid = {
+        size_t temp_resp_length = 0;
 
-    //place header into response
+        return true;
+        return false;
+    }
+
+
+    //find size of header
+    
+    int header_size = sizeof(header);
+    response_length += header_size; // add to response length
+    
+    //bounds checking
+    if (response_length > max_response_size) {
+        return NULL; // response length bigger than the maximum response size.
+    }
+
+    //place header into response... strlcpy?
     for (int i = 0; i < header_size; i++) {
         response[i] = header[i];
     }
