@@ -6,14 +6,14 @@
 /**
  * Loads a file into memory and returns a pointer to the data.
  * 
- * Buffer is not NUL-terminated.
+ * Buffer is not NULL-terminated.
  */
 struct file_data *file_load(char *filename)
 {
     char *buffer, *p;
     struct stat buf;
     int bytes_read, bytes_remaining, total_bytes = 0;
-
+    
     // Get the file size
     if (stat(filename, &buf) == -1) {
         return NULL;
@@ -39,20 +39,17 @@ struct file_data *file_load(char *filename)
         return NULL;
     }
 
+    //this is where buffer overflow happens. For sure...
     // Read in the entire file
-    while (bytes_read = fread(p, 1, bytes_remaining, fp), bytes_read != 0 && bytes_remaining > 0) {
-        if (bytes_read == -1) {
-            free(buffer);
-            return NULL;
-        }
-
+    while ((bytes_read = fread(p, 1, bytes_remaining, fp))> 0) {
         bytes_remaining -= bytes_read;
         p += bytes_read;
         total_bytes += bytes_read;
     }
+    printf("File size: %d\n", total_bytes);
 
     // Allocate the file data struct
-    struct file_data *filedata = malloc(sizeof *filedata);
+    struct file_data *filedata = malloc(sizeof(struct file_data));
 
     if (filedata == NULL) {
         free(buffer);
