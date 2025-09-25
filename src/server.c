@@ -57,69 +57,30 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     //todo:
     // - Need to find a way to build the string responses
     // - Take each part and put into response
+    
+    //Build Date
+    //gmt buffer to store the date string
+    char gmt_buf[35];
+    {
+        time_t now = time(0); // get time
+        struct tm tm = *gmtime(&now); //gmt struct
+        strftime(gmt_buf, sizeof gmt_buf, "%a, %d %b %Y %H:%M:%S %Z", &tm); //place time into gmt_buf
+    }
+
+    //hardcoding connection.
+    char connection[18] = "Connection: close";
 
 
-    //BUILD HEADER
 
-    //first check if contents can fit into response.
-    valid = {
-        size_t temp_resp_length = 0;
-
-        return true;
-        return false;
+    //create final string using snprintf
+    int n = snprintf(response, max_response_size, "%s\n%s\n%s\n%s\n%s\n\n%s", header, gmt_buf, connection, content_length, content_type, body);
+    //n is 
+    if (n >= max_response_size) {
+        //err if msg longer than max size
+        return -1;
     }
 
 
-    //find size of header
-    
-    int header_size = sizeof(header);
-    response_length += header_size; // add to response length
-    
-    //bounds checking
-    if (response_length > max_response_size) {
-        return NULL; // response length bigger than the maximum response size.
-    }
-
-    //place header into response... strlcpy?
-    for (int i = 0; i < header_size; i++) {
-        response[i] = header[i];
-    }
-    response[header_size] = '\n'; //newline
-    
-    //BUILD DATE
-
-    char date_preamble[7] = "Date: ";
-
-
-    //current idea on building time for HTTP response. Need to find a better way of adding timezone to output.
-    // time_t currentTime;
-    // time(&currentTime); // Get the current time
-
-    // // //get timezone
-    // time_t t = time(NULL);
-    // struct tm lt = {0};
-    // localtime_r(&t, &lt);
-    
-    // buffer[]
-    // lt.__tm_zone
-
-
-    // printf("Current time: %s", ctime(&currentTime));
-    // return 0;
-
-
-    // build Connection
-
-    //build Content-Length
-
-    //build content type
-
-    //newline
-
-    //body
-
-
-    snprintf(response, max_response_size, header);
     /*
     {header}\n
     Date: {get_date}\n
@@ -186,12 +147,14 @@ void get_d20(int fd)
  */
 void resp_404(int fd)
 {
-    char filepath[4096];
+    char filepath[23];
     struct file_data *filedata; 
     char *mime_type;
 
     // Fetch the 404.html file
-    snprintf(filepath, sizeof filepath, "%s/404.html", SERVER_FILES);
+    int i = snprintf(filepath, sizeof filepath, "%s/404.html", SERVER_FILES);
+    
+    
     filedata = file_load(filepath);
 
     if (filedata == NULL) {
@@ -307,8 +270,8 @@ int main(void)
         
         // newfd is a new socket descriptor for the new connection.
         // listenfd is still listening for new connections.
-
-        handle_http_request(newfd, cache);
+        resp_404(newfd);
+        // handle_http_request(newfd, cache);
 
         close(newfd);
     }
