@@ -52,36 +52,40 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 {
     const int max_response_size = 262144;
     char response[max_response_size];
-    //init response length
-    size_t response_length = 0;
-    //todo:
-    // - Need to find a way to build the string responses
-    // - Take each part and put into response
     
     //Build Date
     //gmt buffer to store the date string
-    char gmt_buf[35];
+    char gmt_buf[64];
     {
         time_t now = time(0); // get time
         struct tm tm = *gmtime(&now); //gmt struct
         strftime(gmt_buf, sizeof gmt_buf, "%a, %d %b %Y %H:%M:%S %Z", &tm); //place time into gmt_buf
     }
 
-    //hardcoding connection.
-    char connection[18] = "Connection: close";
+    // Build Content-Length header
+    char content_length_header[64];
+    snprintf(content_length_header, sizeof content_length_header, "Content-Length: %d", content_length);
 
+    // Hardcoded connection header
+    char connection[] = "Connection: close";
 
-
-    //create final string using snprintf
-    int n = snprintf(response, max_response_size, "%s\n%s\n%s\n%s\n%s\n\n%s", header, gmt_buf, connection, content_length, content_type, body);
-    //n is 
-    if (n >= max_response_size) {
-        //err if msg longer than max size
+    // Build the headers into the response buffer
+    int response_length = snprintf(response, max_response_size,
+        "%s\r\nDate: %s\r\n%s\r\n%s\r\nContent-Type: %s\r\n\r\n",
+        header, gmt_buf, connection, content_length_header, content_type);
+    
+        //check for errors, or if length is bigger than max size
+    if (response_length < 0 || response_length >= max_response_size) {
+        fprintf(stderr, "Header too large to fit in response buffer\n");
         return -1;
     }
+    memcpy(response + response_length, body, content_length);
+    
+    printf("\n%s\n", response);
 
 
     /*
+    pseudo format for response
     {header}\n
     Date: {get_date}\n
     Connection: {connection (close)}\n
@@ -107,14 +111,9 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     
     */
 
-    // Build HTTP response and store it in response
-
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
 
     // Send it all!
-    int rv = send(fd, response, response_length, 0);
+    int rv = send(fd, response, response_length+content_length, 0);
 
     if (rv < 0) {
         perror("send");
@@ -147,16 +146,16 @@ void get_d20(int fd)
  */
 void resp_404(int fd)
 {
-    char filepath[23];
-    struct file_data *filedata; 
+    char filepath[32];
+    struct file_data *filedata = NULL; 
     char *mime_type;
 
     // Fetch the 404.html file
     int i = snprintf(filepath, sizeof filepath, "%s/404.html", SERVER_FILES);
-    
+    printf("%s\n", filepath);
     
     filedata = file_load(filepath);
-
+    printf("\nFile Loaded.\n");
     if (filedata == NULL) {
         // TODO: make this non-fatal
         fprintf(stderr, "cannot find system 404 file\n");
@@ -164,7 +163,7 @@ void resp_404(int fd)
     }
 
     mime_type = mime_type_get(filepath);
-
+    printf("\n%s\n", mime_type);
     send_response(fd, "HTTP/1.1 404 NOT FOUND", mime_type, filedata->data, filedata->size);
 
     file_free(filedata);

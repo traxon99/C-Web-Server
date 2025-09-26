@@ -25,7 +25,7 @@ struct file_data *file_load(char *filename)
     }
 
     // Open the file for reading
-    FILE *fp = fopen(filename, "rb");
+    FILE *fp = fopen(filename, "r");
 
     if (fp == NULL) {
         return NULL;
@@ -33,7 +33,8 @@ struct file_data *file_load(char *filename)
 
     // Allocate that many bytes
     bytes_remaining = buf.st_size;
-    p = buffer = malloc(bytes_remaining);
+    printf("bytes remaining before %d\n", bytes_remaining);
+    p = buffer = malloc(buf.st_size);
 
     if (buffer == NULL) {
         return NULL;
@@ -42,15 +43,21 @@ struct file_data *file_load(char *filename)
     //this is where buffer overflow happens. For sure...
     // Read in the entire file
     while ((bytes_read = fread(p, 1, bytes_remaining, fp))> 0) {
+        printf("bytes read %d\n", bytes_read);
         bytes_remaining -= bytes_read;
         p += bytes_read;
         total_bytes += bytes_read;
     }
-    printf("File size: %d\n", total_bytes);
+    fclose(fp);
 
     // Allocate the file data struct
-    struct file_data *filedata = malloc(sizeof(struct file_data));
+    struct file_data* filedata = malloc(sizeof(struct file_data));
+    
+    //init values
+    filedata->data = NULL;
+    filedata->size = 0;
 
+    printf("%p",filedata);
     if (filedata == NULL) {
         free(buffer);
         return NULL;
@@ -58,7 +65,7 @@ struct file_data *file_load(char *filename)
 
     filedata->data = buffer;
     filedata->size = total_bytes;
-
+    
     return filedata;
 }
 
