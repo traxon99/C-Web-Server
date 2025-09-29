@@ -79,6 +79,7 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
         fprintf(stderr, "Header too large to fit in response buffer\n");
         return -1;
     }
+    //copy body into response buffer.
     memcpy(response + response_length, body, content_length);
     
     printf("\n%s\n", response);
@@ -128,17 +129,16 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
  */
 void get_d20(int fd)
 {
+    int N = 20;
     // Generate a random number between 1 and 20 inclusive
-    
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    int d20 = rand() % (N + 1);
+    void* body_buf[64];
+    int len = snprintf(body_buf, sizeof(body_buf), "%d", d20);
 
-    // Use send_response() to send it back as text/plain data
+    char mime_type[] = "text/html";//"text/plain";
 
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    send_response(fd, "HTTP/1.1 200 OK", mime_type, body_buf, len); //prevent sending garbage to browser
+
 }
 
 /**
@@ -187,6 +187,7 @@ void get_file(int fd, struct cache *cache, char *request_path)
  */
 char *find_start_of_body(char *header)
 {
+    //return the poninter that finds the 2 new lines in a row
     ///////////////////
     // IMPLEMENT ME! // (Stretch)
     ///////////////////
@@ -207,7 +208,27 @@ void handle_http_request(int fd, struct cache *cache)
         perror("recv");
         return;
     }
+    // //tokenize using strtok
+    // char delim[] = " ";
+    // char* token;
 
+    // token = strtok(request, delim);
+    // printf("\n%s\n", token);
+    // //first token
+    // if (strcmp(token, "GET")) {
+    //     token = strtok(NULL, delim);
+    //     get_d20(fd);
+    //     // if (strcmp(token, " ")) {resp_404(fd);}
+    //     // if (strcmp(token, "/d20")) {get_d20(fd);}
+    // } else if (strcmp(token, "POST")) {
+    //     //
+    // } else {
+    //     resp_404(fd);
+    // }
+    resp_404(fd);
+
+
+    printf("\n%s\n", request);
 
     ///////////////////
     // IMPLEMENT ME! //
@@ -269,8 +290,9 @@ int main(void)
         
         // newfd is a new socket descriptor for the new connection.
         // listenfd is still listening for new connections.
-        resp_404(newfd);
-        // handle_http_request(newfd, cache);
+        // get_d20(newfd);
+        // resp_404(newfd);
+        handle_http_request(newfd, cache);
 
         close(newfd);
     }
