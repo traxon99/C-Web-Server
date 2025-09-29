@@ -82,7 +82,7 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     //copy body into response buffer.
     memcpy(response + response_length, body, content_length);
     
-    printf("\n%s\n", response);
+    // printf("\n%s\n", response);
 
 
     /*
@@ -151,11 +151,11 @@ void resp_404(int fd)
     char *mime_type;
 
     // Fetch the 404.html file
-    int i = snprintf(filepath, sizeof filepath, "%s/404.html", SERVER_FILES);
-    printf("%s\n", filepath);
+    int filepath_len = snprintf(filepath, sizeof filepath, "%s/404.html", SERVER_FILES);
+    // printf("%s\n", filepath);
     
     filedata = file_load(filepath);
-    printf("\nFile Loaded.\n");
+    // printf("\nFile Loaded.\n");
     if (filedata == NULL) {
         // TODO: make this non-fatal
         fprintf(stderr, "cannot find system 404 file\n");
@@ -163,7 +163,7 @@ void resp_404(int fd)
     }
 
     mime_type = mime_type_get(filepath);
-    printf("\n%s\n", mime_type);
+    // printf("\n%s\n", mime_type);
     send_response(fd, "HTTP/1.1 404 NOT FOUND", mime_type, filedata->data, filedata->size);
 
     file_free(filedata);
@@ -174,9 +174,32 @@ void resp_404(int fd)
  */
 void get_file(int fd, struct cache *cache, char *request_path)
 {
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+
+    char filepath[64];
+    struct file_data *filedata = NULL; 
+    char *mime_type;
+
+    // Fetch the 404.html file
+    int filepath_len = snprintf(filepath, sizeof filepath, "%s%s", SERVER_ROOT, request_path);
+    // printf("%s\n", filepath);
+    
+    filedata = file_load(filepath);
+    // printf("\nFile Loaded.\n");
+    if (filedata == NULL) {
+        resp_404(fd);
+    }
+
+    mime_type = mime_type_get(filepath);
+    // printf("\n%s\n", mime_type);
+    send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
+
+    file_free(filedata);
+
+    //check cache for the file
+    printf("\n%s\n", request_path);
+    // Not in cache -> check disk
+
+    //else return 404. Not found
 }
 
 /**
@@ -208,27 +231,33 @@ void handle_http_request(int fd, struct cache *cache)
         perror("recv");
         return;
     }
-    // //tokenize using strtok
-    // char delim[] = " ";
-    // char* token;
+    //tokenize using strtok
+    char delim[] = " ";
+    char* token;
 
-    // token = strtok(request, delim);
-    // printf("\n%s\n", token);
-    // //first token
-    // if (strcmp(token, "GET")) {
-    //     token = strtok(NULL, delim);
-    //     get_d20(fd);
-    //     // if (strcmp(token, " ")) {resp_404(fd);}
-    //     // if (strcmp(token, "/d20")) {get_d20(fd);}
-    // } else if (strcmp(token, "POST")) {
-    //     //
-    // } else {
-    //     resp_404(fd);
-    // }
-    resp_404(fd);
+    token = strtok(request, delim);
+    printf("\n%s\n", token);
+    //first token
+    if (strcmp(token, "GET") == 0) {
+        
+        token = strtok(NULL, delim);        
+        if (strcmp(token, "/d20") == 0) {
+            get_d20(fd);
+        } else if (strcmp(token, "/") == 0) {
+            get_file(fd, cache, "/index.html");
+        }   else {
+            get_file(fd, cache, token);
+        }
+
+    } else if (strcmp(token, "POST")) {
+        //
+    } else {
+        resp_404(fd);
+    }
+    // resp_404(fd);
 
 
-    printf("\n%s\n", request);
+    // printf("\n%s\n", request);
 
     ///////////////////
     // IMPLEMENT ME! //
